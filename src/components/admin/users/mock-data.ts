@@ -1,0 +1,237 @@
+import type { AccountStatus, AdminUser, AdminUserRole, RiskStatus, SellerType } from "./types";
+
+const avatar = (seed: string) =>
+  `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}&backgroundColor=e6f3f4,dfe7fd,fff3e0,e8f5e9&textColor=007782,273444`;
+
+export const currentAdminRole: AdminUserRole = "super_admin";
+
+export const mockAdminUsers: AdminUser[] = [
+  {
+    id: 1042,
+    fullName: "Nadine Ifguisse",
+    avatarUrl: avatar("Nadine Ifguisse"),
+    email: "nadine.ifguisse@example.com",
+    emailVerified: true,
+    phoneMasked: "+33 •• •• •• 47",
+    phoneVerified: true,
+    country: "France",
+    city: "Paris",
+    role: "admin",
+    sellerType: "private_user",
+    riskStatus: "normal",
+    accountStatus: "active",
+    activeListingsCount: 18,
+    completedTransactionsCount: 42,
+    reportsReceivedCount: 0,
+    joinedAt: "2026-05-29T09:10:00.000Z",
+    lastActiveAt: "2026-06-08T08:42:00.000Z",
+  },
+  {
+    id: 1041,
+    fullName: "Youssef El Mansouri",
+    avatarUrl: avatar("Youssef El Mansouri"),
+    email: "youssef.mansouri@example.com",
+    emailVerified: true,
+    phoneMasked: "+212 •• •• •• 19",
+    phoneVerified: false,
+    country: "Morocco",
+    city: "Casablanca",
+    role: "moderator",
+    sellerType: "bookstore",
+    riskStatus: "flagged",
+    accountStatus: "active",
+    activeListingsCount: 126,
+    completedTransactionsCount: 74,
+    reportsReceivedCount: 3,
+    joinedAt: "2026-06-04T17:25:00.000Z",
+    lastActiveAt: "2026-06-08T10:01:00.000Z",
+  },
+  {
+    id: 1038,
+    fullName: "Camille Dubois",
+    avatarUrl: avatar("Camille Dubois"),
+    email: "camille.dubois@example.com",
+    emailVerified: true,
+    phoneMasked: "+33 •• •• •• 82",
+    phoneVerified: true,
+    country: "France",
+    city: "Lyon",
+    role: "user",
+    sellerType: "pro_seller",
+    riskStatus: "normal",
+    accountStatus: "active",
+    activeListingsCount: 58,
+    completedTransactionsCount: 91,
+    reportsReceivedCount: 1,
+    joinedAt: "2026-05-14T12:00:00.000Z",
+    lastActiveAt: "2026-06-07T20:11:00.000Z",
+  },
+  {
+    id: 1031,
+    fullName: "Mina Rahal",
+    avatarUrl: avatar("Mina Rahal"),
+    email: "mina.rahal@example.com",
+    emailVerified: false,
+    phoneMasked: "+32 •• •• •• 06",
+    phoneVerified: false,
+    country: "Belgium",
+    city: "Brussels",
+    role: "user",
+    sellerType: "private_user",
+    riskStatus: "high_risk",
+    accountStatus: "suspended",
+    activeListingsCount: 2,
+    completedTransactionsCount: 0,
+    reportsReceivedCount: 7,
+    joinedAt: "2026-06-06T08:34:00.000Z",
+    lastActiveAt: "2026-06-06T13:16:00.000Z",
+  },
+  {
+    id: 1025,
+    fullName: "Jonas Richter",
+    avatarUrl: avatar("Jonas Richter"),
+    email: "jonas.richter@example.com",
+    emailVerified: true,
+    phoneMasked: "+49 •• •• •• 64",
+    phoneVerified: true,
+    country: "Germany",
+    city: "Berlin",
+    role: "user",
+    sellerType: "private_user",
+    riskStatus: "normal",
+    accountStatus: "active",
+    activeListingsCount: 9,
+    completedTransactionsCount: 16,
+    reportsReceivedCount: 0,
+    joinedAt: "2026-03-18T15:12:00.000Z",
+    lastActiveAt: "2026-06-05T18:28:00.000Z",
+  },
+  {
+    id: 1019,
+    fullName: "Sofia Alvarez",
+    avatarUrl: avatar("Sofia Alvarez"),
+    email: "sofia.alvarez@example.com",
+    emailVerified: true,
+    phoneMasked: "+34 •• •• •• 73",
+    phoneVerified: true,
+    country: "Spain",
+    city: "Madrid",
+    role: "super_admin",
+    sellerType: "private_user",
+    riskStatus: "normal",
+    accountStatus: "active",
+    activeListingsCount: 4,
+    completedTransactionsCount: 23,
+    reportsReceivedCount: 0,
+    joinedAt: "2025-12-03T11:20:00.000Z",
+    lastActiveAt: "2026-06-08T09:56:00.000Z",
+  },
+  {
+    id: 1008,
+    fullName: "Ari Cohen",
+    avatarUrl: avatar("Ari Cohen"),
+    email: "ari.cohen@example.com",
+    emailVerified: false,
+    phoneMasked: "+44 •• •• •• 35",
+    phoneVerified: true,
+    country: "United Kingdom",
+    city: "London",
+    role: "user",
+    sellerType: "private_user",
+    riskStatus: "flagged",
+    accountStatus: "banned",
+    activeListingsCount: 0,
+    completedTransactionsCount: 3,
+    reportsReceivedCount: 11,
+    joinedAt: "2026-01-22T07:05:00.000Z",
+    lastActiveAt: "2026-05-30T16:44:00.000Z",
+  },
+  {
+    id: 997,
+    fullName: "Lea Martin",
+    avatarUrl: avatar("Lea Martin"),
+    email: "lea.martin@example.com",
+    emailVerified: false,
+    phoneMasked: "+33 •• •• •• 11",
+    phoneVerified: false,
+    country: "France",
+    city: "Marseille",
+    role: "user",
+    sellerType: "private_user",
+    riskStatus: "normal",
+    accountStatus: "deleted",
+    activeListingsCount: 0,
+    completedTransactionsCount: 2,
+    reportsReceivedCount: 0,
+    joinedAt: "2025-11-16T19:40:00.000Z",
+    lastActiveAt: "2026-04-04T21:18:00.000Z",
+  },
+];
+
+export const mockPrivateUserData: Record<number, { phoneNumber: string }> = {
+  1042: { phoneNumber: "+33 6 24 18 47" },
+  1041: { phoneNumber: "+212 6 55 42 19" },
+  1038: { phoneNumber: "+33 7 39 44 82" },
+  1031: { phoneNumber: "+32 4 18 93 06" },
+  1025: { phoneNumber: "+49 15 77 24 64" },
+  1019: { phoneNumber: "+34 6 21 80 73" },
+  1008: { phoneNumber: "+44 7 19 63 35" },
+  997: { phoneNumber: "+33 7 12 64 11" },
+};
+
+export const mockUserDetails = {
+  listings: [
+    { id: "BK-8831", title: "The Housemaid", mode: "sale", status: "active", reports: 0 },
+    { id: "BK-8710", title: "Atomic Habits", mode: "swap", status: "active", reports: 1 },
+    { id: "BK-8604", title: "The Midnight Library", mode: "giveaway", status: "reserved", reports: 0 },
+  ],
+  transactions: [
+    { id: "TRX-4402", mode: "sale", status: "completed", counterparty: "Camille Dubois", date: "2026-06-02" },
+    { id: "TRX-4387", mode: "swap", status: "completed", counterparty: "Jonas Richter", date: "2026-05-28" },
+  ],
+  reports: [
+    { id: "RPT-2209", status: "open", reason: "Listing mismatch", date: "2026-06-05" },
+    { id: "RPT-2174", status: "resolved", reason: "Late delivery communication", date: "2026-05-19" },
+  ],
+  reviews: [
+    { id: "REV-931", rating: 5, author: "Sofia Alvarez", text: "Fast response and accurate condition.", date: "2026-06-01" },
+    { id: "REV-900", rating: 4, author: "Jonas Richter", text: "Good swap, packaging could be better.", date: "2026-05-23" },
+  ],
+  chatSafetyFlags: [
+    {
+      id: "CSF-118",
+      trigger: "Anti-scam rule",
+      snippet: "User requested payment outside BookSwap.",
+      status: "needs review",
+      date: "2026-06-06",
+    },
+    {
+      id: "CSF-109",
+      trigger: "Reported message",
+      snippet: "Buyer reported pressure to move conversation off-platform.",
+      status: "resolved",
+      date: "2026-05-26",
+    },
+  ],
+  moderationHistory: [
+    { id: "MOD-410", action: "Warning sent", actor: "Admin", note: "Asked user to keep payment discussion clear.", date: "2026-06-06" },
+    { id: "MOD-386", action: "Report dismissed", actor: "Moderator", note: "No policy issue found.", date: "2026-05-20" },
+  ],
+  internalNotes: [
+    { id: "NOTE-76", author: "Admin", note: "Monitor repeated off-platform language in sale listings.", date: "2026-06-06" },
+  ],
+};
+
+export function getMockAdminUsers() {
+  return mockAdminUsers;
+}
+
+export function getMockAdminUser(userId: number) {
+  return mockAdminUsers.find((user) => user.id === userId) ?? null;
+}
+
+export const accountStatuses: AccountStatus[] = ["active", "suspended", "banned", "deleted"];
+export const riskStatuses: RiskStatus[] = ["normal", "flagged", "high_risk"];
+export const roles: AdminUserRole[] = ["user", "moderator", "admin", "super_admin"];
+export const sellerTypes: SellerType[] = ["private_user", "bookstore", "pro_seller"];
+

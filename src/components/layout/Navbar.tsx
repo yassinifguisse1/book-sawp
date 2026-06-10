@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Camera, HelpCircle, ChevronDown, Menu, X, BookOpen, User, MessageCircle, Bell } from "lucide-react";
+import { BrowseLocationSelector } from "@/components/location/BrowseLocationSelector";
+import { Search, Camera, HelpCircle, Menu, X, BookOpen, User, MessageCircle, Bell } from "lucide-react";
 
-export function Navbar() {
+function NavbarFallback() {
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#E0E0E0] bg-white">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4">
+        <div className="flex items-center gap-2 shrink-0">
+          <BookOpen className="h-7 w-7 text-[#007782]" />
+          <span className="hidden text-xl font-bold text-[#007782] sm:inline">BookSwap</span>
+        </div>
+        <div className="h-10 flex-1 max-w-xl animate-pulse rounded-md bg-[#EEEEEE]" />
+      </div>
+    </header>
+  );
+}
+
+function NavbarContent() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -59,11 +74,10 @@ export function Navbar() {
           <span className="text-xl font-bold text-[#007782] hidden sm:inline">BookSwap</span>
         </Link>
 
-        {/* Browse Dropdown */}
-        <button className="hidden md:flex items-center gap-1 text-sm font-medium text-[#111] hover:text-[#007782] transition-colors px-2 py-1 rounded-md hover:bg-[#F7F7F7]">
-          Browse
-          <ChevronDown className="w-4 h-4" />
-        </button>
+        {/* Browse location selector */}
+        <div className="hidden md:block shrink-0">
+          <BrowseLocationSelector />
+        </div>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex-1 max-w-xl">
@@ -92,9 +106,13 @@ export function Navbar() {
           </Link>
 
           {/* Help */}
-          <button className="hidden md:flex p-2 text-[#666] hover:text-[#007782] transition-colors rounded-full hover:bg-[#F7F7F7]">
+          <Link
+            href="/how-it-works"
+            aria-label="How BookSwap works"
+            className="hidden md:flex p-2 text-[#666] hover:text-[#007782] transition-colors rounded-full hover:bg-[#F7F7F7]"
+          >
             <HelpCircle className="w-5 h-5" />
-          </button>
+          </Link>
 
           {/* Auth */}
           {isAuthenticated ? (
@@ -162,6 +180,9 @@ export function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[#E0E0E0] bg-white px-4 py-4 space-y-3">
+          <div className="pb-1">
+            <BrowseLocationSelector />
+          </div>
           <Link
             href="/list"
             className="flex items-center gap-2 px-4 py-2.5 bg-[#007782] text-white text-sm font-semibold rounded-md"
@@ -169,6 +190,14 @@ export function Navbar() {
           >
             <BookOpen className="w-4 h-4" />
             List a Book
+          </Link>
+          <Link
+            href="/how-it-works"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#111] hover:bg-[#F7F7F7] rounded-md"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <HelpCircle className="w-4 h-4" />
+            How it works
           </Link>
           {isAuthenticated && (
             <>
@@ -201,5 +230,13 @@ export function Navbar() {
         </div>
       )}
     </header>
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense fallback={<NavbarFallback />}>
+      <NavbarContent />
+    </Suspense>
   );
 }

@@ -60,6 +60,9 @@ yarn-error.log*
 *.sqlite3
 *.sqlite3-*
 
+# imported geo datasets (downloaded by npm run locations:import)
+/data/geonames/
+
 # caches
 .eslintcache
 .stylelintcache

@@ -29,6 +29,29 @@ export async function indexListing(record: SearchListingRecord) {
   });
 }
 
+export async function clearListingSearchIndex() {
+  if (!env.algoliaAppId || !env.algoliaAdminApiKey) {
+    return;
+  }
+
+  const client = algoliasearch(env.algoliaAppId, env.algoliaAdminApiKey);
+  const indexes = [
+    env.algoliaIndexName,
+    `${env.algoliaIndexName}_recent`,
+    `${env.algoliaIndexName}_price_asc`,
+    `${env.algoliaIndexName}_price_desc`,
+  ];
+
+  await Promise.all(
+    indexes.map((indexName) =>
+      client.clearObjects({ indexName }).catch((error) => {
+        console.error(`Failed to clear Algolia index ${indexName}`, error);
+        return undefined;
+      }),
+    ),
+  );
+}
+
 export async function removeListingFromIndex(objectID: string) {
   if (!env.algoliaAppId || !env.algoliaAdminApiKey) {
     return;

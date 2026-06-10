@@ -5,7 +5,14 @@ import { z } from "zod";
 import { presentListing } from "@/server/domain/listings";
 import { getDb } from "@/server/db/connection";
 import { books, reviews, users, type Book } from "@/server/db/schema";
-import { createRouter, publicQuery } from "@/server/trpc";
+import { createRouter, publicQuery, authedQuery } from "@/server/trpc";
+import {
+  getUserBrowsePreference,
+  getUserHomeLocationId,
+  saveUserBrowsePreference,
+  saveUserHomeLocation,
+} from "@/server/domain/browse-preferences";
+import { getLocationProvider } from "@/server/platform/location";
 
 const publicIdInput = z.object({ publicId: z.string().uuid() });
 
@@ -46,6 +53,7 @@ export const profileRouter = createRouter({
         and(
           eq(users.publicId, input.publicId),
           isNull(users.deletedAt),
+          isNull(users.bannedAt),
           isNull(users.suspendedAt),
         ),
       )
@@ -90,4 +98,49 @@ export const profileRouter = createRouter({
       reviews: reviewRows,
     };
   }),
+
+  getBrowsePreferences: authedQuery.query(({ ctx }) =>
+    getUserBrowsePreference(ctx.user.id),
+  ),
+
+  saveBrowsePreferences: authedQuery
+    .input(
+      z.object({
+        browseLocationId: z.number().int().positive().nullable().optional(),
+        radiusKm: z.number().int().min(1).max(20000).optional(),
+        includeDomesticShipping: z.boolean().optional(),
+        includeInternationalShipping: z.boolean().optional(),
+        locationSource: z
+          .enum(["manual_selection", "profile_default", "browser_geolocation", "ip_suggestion"])
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.browseLocationId) {
+        const place = await getLocationProvider().resolvePlace({
+          locationId: input.browseLocationId,
+        });
+        if (!place) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown location" });
+        }
+      }
+      return saveUserBrowsePreference(ctx.user.id, input);
+    }),
+
+  getHomeLocation: authedQuery.query(async ({ ctx }) => {
+    const homeLocationId = await getUserHomeLocationId(ctx.user.id);
+    if (!homeLocationId) return null;
+    return getLocationProvider().resolvePlace({ locationId: homeLocationId });
+  }),
+
+  saveHomeLocation: authedQuery
+    .input(z.object({ locationId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const place = await getLocationProvider().resolvePlace({ locationId: input.locationId });
+      if (!place) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown location" });
+      }
+      await saveUserHomeLocation(ctx.user.id, input.locationId);
+      return { locationId: place.locationId, label: place.label };
+    }),
 });

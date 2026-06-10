@@ -7,7 +7,7 @@ const footerSections = [
   {
     title: "BookSwap",
     links: [
-      { label: "About BookSwap", href: "/" },
+      { label: "How it works", href: "/how-it-works" },
       { label: "List a book", href: "/list" },
       { label: "My profile", href: "/profile/me" },
       { label: "Messages", href: "/messages" },
@@ -25,10 +25,10 @@ const footerSections = [
   {
     title: "Help",
     links: [
-      { label: "How swaps work", href: "/?search=swap" },
+      { label: "How swaps work", href: "/how-it-works" },
       { label: "Buying books", href: "/?transactionType=sale" },
       { label: "Free books", href: "/?transactionType=giveaway" },
-      { label: "Trust and safety", href: "/" },
+      { label: "Trust and safety", href: "/how-it-works" },
     ],
   },
   {
@@ -92,9 +92,9 @@ export function Footer() {
           <div className="mt-6 flex flex-col gap-3 text-xs text-[#666] md:flex-row md:items-center md:justify-between">
             <p>Share stories. Build community. Swap books.</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Link href="/" className="hover:text-[#007782]">Privacy Center</Link>
-              <Link href="/" className="hover:text-[#007782]">Cookie Policy</Link>
-              <Link href="/" className="hover:text-[#007782]">Accessibility</Link>
+              <Link href="/privacy" className="hover:text-[#007782]">Privacy Center</Link>
+              <Link href="/cookies" className="hover:text-[#007782]">Cookie Policy</Link>
+              <Link href="/terms" className="hover:text-[#007782]">Terms & Conditions</Link>
             </div>
           </div>
         </div>

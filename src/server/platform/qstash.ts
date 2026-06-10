@@ -1,14 +1,30 @@
 import { Client, Receiver } from "@upstash/qstash";
 import { env } from "@/server/env";
 
+function isLocalHostname(hostname: string) {
+  return (
+    hostname === "localhost" ||
+    hostname === "0.0.0.0" ||
+    /^127\.\d+\.\d+\.\d+$/.test(hostname) ||
+    hostname === "::1" ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".test")
+  );
+}
+
 export async function enqueueOutboxProcessing() {
   if (!env.qstashToken) {
     return;
   }
 
+  const destination = new URL("/api/workers/outbox", env.appUrl);
+  if (isLocalHostname(destination.hostname)) {
+    return;
+  }
+
   const client = new Client({ token: env.qstashToken });
   await client.publishJSON({
-    url: `${env.appUrl}/api/workers/outbox`,
+    url: destination.toString(),
     body: { requestedAt: new Date().toISOString() },
     retries: 5,
   });

@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { Database } from "@/server/db/connection";
 import { getDb } from "@/server/db/connection";
 import { books, conversations, messages, users } from "@/server/db/schema";
+import { hasRequiredTrustLevel } from "./admin-users";
 import { scanMarketplaceText } from "./anti-scam";
 import { scheduleOutboxProcessing, writeOutboxEvent } from "./outbox";
 import { createNotification } from "./notifications";
@@ -87,6 +88,21 @@ export async function sendMessage(input: {
       input.content,
       recentMessages.map((message) => message.content),
     );
+
+    if (scan.flagged) {
+      const [sender] = await tx
+        .select({ emailVerifiedAt: users.emailVerifiedAt, phoneVerifiedAt: users.phoneVerifiedAt, phoneRevokedAt: users.phoneRevokedAt })
+        .from(users)
+        .where(eq(users.id, input.userId))
+        .limit(1);
+      if (!sender || !hasRequiredTrustLevel(sender)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This message was blocked for safety. Verify your email and phone to send links or payment references.",
+        });
+      }
+    }
+
     const [message] = await tx.insert(messages).values({
       conversationId: input.conversationId,
       senderId: input.userId,

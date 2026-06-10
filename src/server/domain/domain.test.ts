@@ -4,6 +4,7 @@ import { scanMarketplaceText } from "@/server/domain/anti-scam";
 import { conversationSubjectKey } from "@/server/domain/messaging";
 import { assertTransactionTransition } from "@/server/domain/transaction-state";
 import { toMajorUnits, toMinorUnits, validateListingMoney } from "@/server/domain/validation";
+import { createListing } from "@/server/domain/listings";
 
 describe("money", () => {
   it("stores decimal values as integer minor units", () => {
@@ -16,6 +17,23 @@ describe("money", () => {
     expect(() => validateListingMoney("sale", null)).toThrow("positive price");
     expect(() => validateListingMoney("swap", { amountMinor: 1, currency: "USD" })).toThrow("cannot have");
     expect(() => validateListingMoney("giveaway", null)).not.toThrow();
+  });
+});
+
+describe("listing publishing", () => {
+  it("requires an uploaded cover image", async () => {
+    await expect(
+      createListing(1, {
+        title: "The Pragmatic Programmer",
+        author: "Andrew Hunt",
+        genre: "Non-Fiction",
+        condition: "good",
+        transactionType: "swap",
+        currency: "USD",
+        country: "US",
+        city: "New York",
+      }),
+    ).rejects.toThrow("cover image");
   });
 });
 

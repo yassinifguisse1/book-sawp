@@ -2,11 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
-import { shadcn } from "@clerk/ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import superjson from "superjson";
+import { AuthDatabaseSync } from "@/components/auth/AuthDatabaseSync";
 import type { AppRouter } from "@/server/router";
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -31,18 +31,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ClerkProvider
-      dynamic
-      afterSignOutUrl="/"
-      appearance={{
-        theme: shadcn,
-        variables: {
-          colorPrimary: "#007782",
-        },
-      }}
-    >
+    <ClerkProvider dynamic afterSignOutUrl="/">
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
+          <AuthDatabaseSync />
           {children}
         </QueryClientProvider>
       </trpc.Provider>

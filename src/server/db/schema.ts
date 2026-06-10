@@ -4,6 +4,7 @@ import {
   bigint,
   boolean,
   check,
+  double,
   index,
   int,
   json,
@@ -38,10 +39,11 @@ export const users = mysqlTable(
     country: varchar("country", { length: 2 }),
     city: varchar("city", { length: 120 }),
     bio: text("bio"),
-    role: mysqlEnum("role", ["user", "moderator", "admin"])
+    role: mysqlEnum("role", ["user", "moderator", "admin", "super_admin"])
       .default("user")
       .notNull(),
     suspendedAt: timestamp("suspendedAt"),
+    bannedAt: timestamp("bannedAt"),
     deletedAt: timestamp("deletedAt"),
     anonymizedAt: timestamp("anonymizedAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -53,12 +55,209 @@ export const users = mysqlTable(
   },
   (table) => [
     index("users_role_idx").on(table.role),
+    index("users_banned_at_idx").on(table.bannedAt),
     index("users_deleted_at_idx").on(table.deletedAt),
   ],
 );
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const userProfileLocations = mysqlTable(
+  "user_profile_locations",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("userId", { mode: "number", unsigned: true }).notNull().unique(),
+    homeLocationId: bigint("homeLocationId", { mode: "number", unsigned: true }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("user_profile_locations_home_idx").on(table.homeLocationId)],
+);
+
+export type UserProfileLocation = typeof userProfileLocations.$inferSelect;
+export type InsertUserProfileLocation = typeof userProfileLocations.$inferInsert;
+
+export const userBrowsePreferences = mysqlTable(
+  "user_browse_preferences",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("userId", { mode: "number", unsigned: true }).notNull().unique(),
+    browseLocationId: bigint("browseLocationId", { mode: "number", unsigned: true }),
+    radiusKm: int("radiusKm", { unsigned: true }).default(25).notNull(),
+    includeDomesticShipping: boolean("includeDomesticShipping").default(true).notNull(),
+    includeInternationalShipping: boolean("includeInternationalShipping")
+      .default(false)
+      .notNull(),
+    locationSource: mysqlEnum("locationSource", [
+      "manual_selection",
+      "profile_default",
+      "browser_geolocation",
+      "ip_suggestion",
+    ])
+      .default("manual_selection")
+      .notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("user_browse_preferences_location_idx").on(table.browseLocationId)],
+);
+
+export type UserBrowsePreference = typeof userBrowsePreferences.$inferSelect;
+export type InsertUserBrowsePreference = typeof userBrowsePreferences.$inferInsert;
+
+export const adminInvitations = mysqlTable(
+  "admin_invitations",
+  {
+    id: serial("id").primaryKey(),
+    publicId: publicId().unique(),
+    email: varchar("email", { length: 320 }).notNull(),
+    role: mysqlEnum("role", ["moderator", "admin", "super_admin"]).notNull(),
+    status: mysqlEnum("status", ["pending", "accepted", "revoked", "expired"])
+      .default("pending")
+      .notNull(),
+    invitedByUserId: bigint("invitedByUserId", {
+      mode: "number",
+      unsigned: true,
+    }).notNull(),
+    acceptedByUserId: bigint("acceptedByUserId", {
+      mode: "number",
+      unsigned: true,
+    }),
+    clerkInvitationId: varchar("clerkInvitationId", { length: 255 }),
+    deliveryError: text("deliveryError"),
+    expiresAt: timestamp("expiresAt"),
+    acceptedAt: timestamp("acceptedAt"),
+    revokedAt: timestamp("revokedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("admin_invitations_email_status_idx").on(table.email, table.status),
+    index("admin_invitations_inviter_idx").on(
+      table.invitedByUserId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export type AdminInvitation = typeof adminInvitations.$inferSelect;
+export type InsertAdminInvitation = typeof adminInvitations.$inferInsert;
+
+export const categories = mysqlTable(
+  "categories",
+  {
+    id: serial("id").primaryKey(),
+    publicId: publicId().unique(),
+    parentId: bigint("parentId", { mode: "number", unsigned: true }),
+    slug: varchar("slug", { length: 120 }).notNull().unique(),
+    name: varchar("name", { length: 120 }).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "inactive"])
+      .default("draft")
+      .notNull(),
+    sortOrder: int("sortOrder", { unsigned: true }).default(0).notNull(),
+    seoTitle: varchar("seoTitle", { length: 160 }),
+    seoDescription: varchar("seoDescription", { length: 320 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("categories_parent_status_idx").on(table.parentId, table.status, table.sortOrder),
+    index("categories_status_sort_idx").on(table.status, table.sortOrder),
+  ],
+);
+
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = typeof categories.$inferInsert;
+
+export const locations = mysqlTable(
+  "locations",
+  {
+    id: serial("id").primaryKey(),
+    publicId: publicId().unique(),
+    sourceExternalId: varchar("sourceExternalId", { length: 32 }).unique(),
+    placeType: mysqlEnum("placeType", ["country", "region", "city"]).notNull(),
+    countryCode: varchar("countryCode", { length: 2 }).notNull(),
+    regionCode: varchar("regionCode", { length: 20 }),
+    cityName: varchar("cityName", { length: 200 }),
+    normalizedCityName: varchar("normalizedCityName", { length: 200 }),
+    asciiCityName: varchar("asciiCityName", { length: 200 }),
+    latitude: double("latitude"),
+    longitude: double("longitude"),
+    geohash: varchar("geohash", { length: 12 }),
+    population: int("population", { unsigned: true }).default(0).notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("locations_country_city_idx").on(table.countryCode, table.normalizedCityName),
+    index("locations_city_idx").on(table.normalizedCityName),
+    index("locations_ascii_idx").on(table.asciiCityName),
+    index("locations_geohash_idx").on(table.geohash),
+    index("locations_population_idx").on(table.population),
+    index("locations_country_region_idx").on(table.countryCode, table.regionCode),
+  ],
+);
+
+export type Location = typeof locations.$inferSelect;
+export type InsertLocation = typeof locations.$inferInsert;
+
+export const locationAliases = mysqlTable(
+  "location_aliases",
+  {
+    id: serial("id").primaryKey(),
+    locationId: bigint("locationId", { mode: "number", unsigned: true }).notNull(),
+    alias: varchar("alias", { length: 200 }).notNull(),
+    normalizedAlias: varchar("normalizedAlias", { length: 200 }).notNull(),
+    languageCode: varchar("languageCode", { length: 10 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("location_aliases_location_idx").on(table.locationId),
+    index("location_aliases_normalized_idx").on(table.normalizedAlias),
+  ],
+);
+
+export type LocationAlias = typeof locationAliases.$inferSelect;
+export type InsertLocationAlias = typeof locationAliases.$inferInsert;
+
+export const marketConfigs = mysqlTable(
+  "market_configs",
+  {
+    id: serial("id").primaryKey(),
+    countryCode: varchar("countryCode", { length: 2 }).notNull().unique(),
+    enabledForBrowsing: boolean("enabledForBrowsing").default(true).notNull(),
+    enabledForListings: boolean("enabledForListings").default(true).notNull(),
+    enabledForManualShipping: boolean("enabledForManualShipping").default(true).notNull(),
+    enabledForProtectedPayments: boolean("enabledForProtectedPayments").default(false).notNull(),
+    defaultCurrencyCode: varchar("defaultCurrencyCode", { length: 3 }).default("USD").notNull(),
+    distanceUnit: mysqlEnum("distanceUnit", ["km", "mi"]).default("km").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("market_configs_browsing_idx").on(table.enabledForBrowsing)],
+);
+
+export type MarketConfig = typeof marketConfigs.$inferSelect;
+export type InsertMarketConfig = typeof marketConfigs.$inferInsert;
 
 export const books = mysqlTable(
   "books",
@@ -68,6 +267,7 @@ export const books = mysqlTable(
     title: varchar("title", { length: 255 }).notNull(),
     author: varchar("author", { length: 255 }).notNull(),
     description: text("description"),
+    categoryId: bigint("categoryId", { mode: "number", unsigned: true }),
     genre: varchar("genre", { length: 100 }).notNull(),
     condition: mysqlEnum("condition", [
       "likenew",
@@ -100,6 +300,23 @@ export const books = mysqlTable(
     shippingMinor: int("shippingMinor", { unsigned: true }).default(0).notNull(),
     country: varchar("country", { length: 2 }).default("US").notNull(),
     city: varchar("city", { length: 120 }).default("Unknown").notNull(),
+    locationId: bigint("locationId", { mode: "number", unsigned: true }),
+    pickupEnabled: boolean("pickupEnabled").default(false).notNull(),
+    pickupRadiusKm: int("pickupRadiusKm", { unsigned: true }),
+    manualShippingEnabled: boolean("manualShippingEnabled").default(false).notNull(),
+    shippingScope: mysqlEnum("shippingScope", [
+      "pickup_only",
+      "domestic_only",
+      "selected_countries",
+      "worldwide",
+    ])
+      .default("pickup_only")
+      .notNull(),
+    locationPrecision: mysqlEnum("locationPrecision", ["city", "region", "country"])
+      .default("city")
+      .notNull(),
+    educationLevel: varchar("educationLevel", { length: 80 }),
+    schoolType: mysqlEnum("schoolType", ["public_school", "private_school", "not_applicable"]),
     pickupAvailable: boolean("pickupAvailable").default(false).notNull(),
     imageUrl: text("imageUrl"),
     imageUrls: json("imageUrls").$type<string[]>(),
@@ -117,6 +334,9 @@ export const books = mysqlTable(
     index("books_owner_idx").on(table.ownerId, table.status, table.createdAt),
     index("books_geo_idx").on(table.country, table.city, table.status),
     index("books_mode_idx").on(table.transactionType, table.status, table.createdAt),
+    index("books_category_idx").on(table.categoryId, table.status, table.createdAt),
+    index("books_location_idx").on(table.locationId, table.status, table.createdAt),
+    index("books_shipping_scope_idx").on(table.shippingScope, table.status),
     check(
       "books_sale_price_check",
       sql`(${table.transactionType} = 'sale' AND ${table.priceMinor} > 0) OR (${table.transactionType} <> 'sale' AND ${table.priceMinor} IS NULL)`,
@@ -158,6 +378,23 @@ export const listingImages = mysqlTable(
     ),
   ],
 );
+
+export const listingShippingDestinations = mysqlTable(
+  "listing_shipping_destinations",
+  {
+    id: serial("id").primaryKey(),
+    listingId: bigint("listingId", { mode: "number", unsigned: true }).notNull(),
+    countryCode: varchar("countryCode", { length: 2 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("listing_shipping_dest_unique").on(table.listingId, table.countryCode),
+    index("listing_shipping_dest_country_idx").on(table.countryCode),
+  ],
+);
+
+export type ListingShippingDestination = typeof listingShippingDestinations.$inferSelect;
+export type InsertListingShippingDestination = typeof listingShippingDestinations.$inferInsert;
 
 export const uploadedAssets = mysqlTable(
   "uploaded_assets",

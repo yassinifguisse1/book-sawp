@@ -7,7 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrustActionRedirect } from "@/hooks/useTrustActionRedirect";
 import { bookPath, makeBookSlug, parsePublicSlug, profilePath } from "@/lib/slugs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -37,7 +37,11 @@ export default function BookDetail() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const publicId = parsePublicSlug(slug);
-  const [imageError, setImageError] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{
+    publicId: string;
+    imageUrl: string;
+  } | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const handleTrustError = useTrustActionRedirect();
 
   const { data: book, isLoading } = trpc.book.byPublicId.useQuery(
@@ -94,6 +98,23 @@ export default function BookDetail() {
 
   const isOwner = user?.publicId === book?.ownerPublicId;
   const canEditListing = book?.status === "active" || book?.status === "draft";
+  const listingImages = useMemo(() => {
+    if (!book) return [];
+    const urls = [...(book.imageUrls ?? []), ...(book.imageUrl ? [book.imageUrl] : [])]
+      .map((url) => url.trim())
+      .filter(Boolean);
+    return [...new Set(urls)].slice(0, 4);
+  }, [book]);
+  const visibleImages = useMemo(
+    () => listingImages.filter((imageUrl) => !failedImages.has(imageUrl)),
+    [failedImages, listingImages],
+  );
+  const activeImage =
+    selectedImage && selectedImage.publicId === book?.publicId
+      ? (visibleImages.find((imageUrl) => imageUrl === selectedImage.imageUrl) ??
+        visibleImages[0])
+      : visibleImages[0];
+  const activeImageIndex = activeImage ? visibleImages.indexOf(activeImage) : -1;
 
   const deleteListing = trpc.book.delete.useMutation({
     onSuccess: () => {
@@ -121,13 +142,11 @@ export default function BookDetail() {
     } else if (book.transactionType === "giveaway") {
       createTransaction.mutate({
         bookId: book.id,
-        type: "giveaway",
         idempotencyKey: crypto.randomUUID(),
       });
     } else if (book.transactionType === "sale") {
       createTransaction.mutate({
         bookId: book.id,
-        type: "purchase",
         idempotencyKey: crypto.randomUUID(),
       });
     }
@@ -206,39 +225,69 @@ export default function BookDetail() {
         <div className="grid md:grid-cols-5 gap-8">
           {/* Left: Image */}
           <div className="md:col-span-3">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="relative bg-[#F7F7F7] rounded-lg overflow-hidden"
-            >
-              {!imageError && book.imageUrl ? (
-                <img
-                  src={book.imageUrl}
-                  alt={book.title}
-                  className="w-full max-h-[600px] object-contain"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <div className="aspect-[3/4] flex items-center justify-center">
-                  <span className="text-6xl font-bold text-[#007782]/20">{book.title.charAt(0)}</span>
-                </div>
-              )}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+              <div className="relative overflow-hidden rounded-lg bg-[#F7F7F7]">
+                {activeImage ? (
+                  <img
+                    src={activeImage}
+                    alt={`${book.title} image ${activeImageIndex >= 0 ? activeImageIndex + 1 : 1}`}
+                    className="max-h-[640px] w-full object-contain"
+                    onError={() => {
+                      setFailedImages((current) => new Set(current).add(activeImage));
+                    }}
+                  />
+                ) : (
+                  <div className="aspect-[3/4] flex items-center justify-center">
+                    <span className="text-6xl font-bold text-[#007782]/20">{book.title.charAt(0)}</span>
+                  </div>
+                )}
 
-              {/* Favorite */}
-              {isAuthenticated && (
-                <button
-                  onClick={() => toggleFav.mutate({ bookId: book.id })}
-                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                >
-                  <motion.div whileTap={{ scale: 1.3 }}>
-                    <Heart
-                      className={`w-5 h-5 ${
-                        favData?.favorited ? "fill-[#D32F2F] text-[#D32F2F]" : "text-[#666]"
+                {/* Favorite */}
+                {isAuthenticated && (
+                  <button
+                    onClick={() => toggleFav.mutate({ bookId: book.id })}
+                    className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+                    aria-label={favData?.favorited ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    <motion.div whileTap={{ scale: 1.3 }}>
+                      <Heart
+                        className={`w-5 h-5 ${
+                          favData?.favorited ? "fill-[#D32F2F] text-[#D32F2F]" : "text-[#666]"
+                        }`}
+                      />
+                    </motion.div>
+                  </button>
+                )}
+              </div>
+
+              {visibleImages.length > 1 ? (
+                <div className="grid grid-cols-4 gap-2">
+                  {visibleImages.map((imageUrl, index) => (
+                    <button
+                      key={imageUrl}
+                      type="button"
+                      onClick={() =>
+                        setSelectedImage({ publicId: book.publicId, imageUrl })
+                      }
+                      className={`overflow-hidden rounded-md border-2 bg-[#F7F7F7] transition-colors ${
+                        activeImage === imageUrl
+                          ? "border-[#007782]"
+                          : "border-transparent hover:border-[#B8C5C8]"
                       }`}
-                    />
-                  </motion.div>
-                </button>
-              )}
+                      aria-label={`Show book image ${index + 1}`}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="aspect-[3/4] w-full object-cover"
+                        onError={() => {
+                          setFailedImages((current) => new Set(current).add(imageUrl));
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </motion.div>
           </div>
 

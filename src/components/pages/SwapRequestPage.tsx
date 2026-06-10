@@ -68,7 +68,6 @@ export default function SwapRequest() {
     createTransaction.mutate({
       bookId: targetBook.id,
       offeredBookId: selectedBook,
-      type: "swap",
       idempotencyKey: crypto.randomUUID(),
       message: message || undefined,
     });

@@ -9,10 +9,15 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/server/db/seed.ts",
+    "db:reset": "tsx src/server/db/reset-database.ts",
+    "locations:import": "tsx src/server/db/import-locations.ts",
+    "db:studio": "drizzle-kit studio",
     "search:configure": "tsx src/server/search/configure.ts"
   },
   "dependencies": {
@@ -29,6 +34,7 @@
     "@upstash/redis": "^1.38.0",
     "@vercel/blob": "^2.4.0",
     "ably": "^2.21.0",
+    "adm-zip": "^0.5.17",
     "algoliasearch": "^5.53.0",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.40.0",
@@ -43,6 +49,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

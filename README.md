@@ -8,22 +8,22 @@ Vite app remains in the sibling `react-app` directory as a reference.
 - Next.js 16 App Router
 - Clerk authentication
 - tRPC with React Query
-- Drizzle ORM with local MySQL or PlanetScale MySQL
+- Drizzle ORM with MySQL (`mysql2` driver; Aiven, local Docker, or PlanetScale)
 - Tailwind CSS 4
 - Upstash Redis and QStash, Vercel Blob, Algolia, Ably, Resend, and Sentry adapters
 
 ## Local Setup
 
-1. Copy `.env.example` to `.env.local` and fill in the MySQL and Clerk values.
-2. Create a new empty MySQL database for this app.
-3. Push the schema and seed the prototype data:
+1. Copy `.env.example` to `.env.local` and fill in the Clerk values.
+2. Start Docker Desktop, then start local MySQL and apply the schema:
 
 ```bash
+npm run db:up
 npm run db:push
 npm run db:seed
 ```
 
-4. Start the development server:
+3. Start the development server:
 
 ```bash
 npm run dev
@@ -65,5 +65,6 @@ Use `db:push` only for local development. For deployed environments, generate
 ## Production Operations
 
 See [`docs/operations.md`](docs/operations.md) and
-[`docs/launch-checklist.md`](docs/launch-checklist.md). The production database
-uses `DATABASE_DRIVER=planetscale`; local development uses `mysql2`.
+[`docs/launch-checklist.md`](docs/launch-checklist.md). Use `DATABASE_DRIVER=mysql2`
+with separate dev and production databases. PlanetScale is optional when you
+outgrow a single-node MySQL host.

@@ -6,12 +6,24 @@ function enabled(name: string) {
   return value(name) === "true";
 }
 
+function databaseNameFromUrl(databaseUrl: string) {
+  try {
+    const name = new URL(databaseUrl).pathname.replace(/^\//, "");
+    return name || "bookswap";
+  } catch {
+    return "bookswap";
+  }
+}
+
 export const env = {
   get appUrl() {
     return value("APP_URL") || "http://localhost:3000";
   },
   get databaseUrl() {
     return value("DATABASE_URL");
+  },
+  get cacheNamespace() {
+    return value("CACHE_NAMESPACE") || databaseNameFromUrl(value("DATABASE_URL"));
   },
   get databaseDriver() {
     return value("DATABASE_DRIVER") || "mysql2";
@@ -25,11 +37,17 @@ export const env = {
   get ownerClerkUserId() {
     return value("OWNER_CLERK_USER_ID");
   },
+  get clerkWebhookSigningSecret() {
+    return value("CLERK_WEBHOOK_SIGNING_SECRET");
+  },
   get rateLimitBypass() {
     return enabled("RATE_LIMIT_BYPASS");
   },
   get anonymizationRetentionDays() {
     return Number(value("ANONYMIZATION_RETENTION_DAYS") || "30");
+  },
+  get phoneHmacKey() {
+    return value("PHONE_HMAC_KEY");
   },
   get upstashRedisRestUrl() {
     return value("UPSTASH_REDIS_REST_URL");
@@ -66,5 +84,8 @@ export const env = {
   },
   get resendFromEmail() {
     return value("RESEND_FROM_EMAIL") || "BookSwap <notifications@example.com>";
+  },
+  get supportEmail() {
+    return value("SUPPORT_EMAIL");
   },
 };

@@ -1,9 +1,10 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { scheduleOutboxProcessing, writeOutboxEvent } from "@/server/domain/outbox";
 import { getDb } from "@/server/db/connection";
-import { books, moderationAuditLogs, reports, users } from "@/server/db/schema";
+import { books, conversations, messages, moderationAuditLogs, reports, users } from "@/server/db/schema";
 import { createRouter, activeUserAction, staffQuery } from "@/server/trpc";
 
 export const moderationRouter = createRouter({
@@ -18,6 +19,46 @@ export const moderationRouter = createRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
+
+      if (input.targetType === "user") {
+        if (input.targetId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot report yourself" });
+        }
+        const [target] = await db.select({ id: users.id }).from(users).where(eq(users.id, input.targetId)).limit(1);
+        if (!target) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Report target not found" });
+        }
+      } else if (input.targetType === "listing") {
+        const [target] = await db
+          .select({ id: books.id })
+          .from(books)
+          .where(and(eq(books.id, input.targetId), isNull(books.deletedAt)))
+          .limit(1);
+        if (!target) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Report target not found" });
+        }
+      } else if (input.targetType === "message") {
+        const [messageRow] = await db
+          .select({ conversationId: messages.conversationId })
+          .from(messages)
+          .where(eq(messages.id, input.targetId))
+          .limit(1);
+        if (!messageRow) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Report target not found" });
+        }
+        const [conversation] = await db
+          .select({ participant1Id: conversations.participant1Id, participant2Id: conversations.participant2Id })
+          .from(conversations)
+          .where(eq(conversations.id, messageRow.conversationId))
+          .limit(1);
+        if (
+          !conversation ||
+          (conversation.participant1Id !== ctx.user.id && conversation.participant2Id !== ctx.user.id)
+        ) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Report target not found" });
+        }
+      }
+
       const reportId = await db.transaction(async (tx) => {
         const [report] = await tx.insert(reports).values({ reporterId: ctx.user.id, ...input });
         const id = Number(report.insertId);

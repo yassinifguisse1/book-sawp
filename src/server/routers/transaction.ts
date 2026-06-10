@@ -16,8 +16,7 @@ export const transactionRouter = createRouter({
         offeredBookId: z.number().int().positive().optional(),
         idempotencyKey: z.string().min(8).max(80).optional(),
         message: z.string().trim().max(2000).optional(),
-        type: z.enum(["swap", "giveaway", "purchase"]).optional(),
-        price: z.number().optional(),
+
       }),
     )
     .mutation(({ ctx, input }) =>

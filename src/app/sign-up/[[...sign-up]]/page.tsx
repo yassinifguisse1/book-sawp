@@ -2,8 +2,8 @@ import { SignUp } from "@clerk/nextjs";
 
 export default function Page() {
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f7f7f7] px-4 py-12">
-      <SignUp />
-    </main>
+    <div className="flex min-h-screen items-center justify-center">
+      <SignUp fallbackRedirectUrl="/" signInFallbackRedirectUrl="/sign-in" />
+    </div>
   );
 }

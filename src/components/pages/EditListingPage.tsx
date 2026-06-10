@@ -10,6 +10,7 @@ import {
   type ListingFormSubmitValues,
 } from "@/components/listings/ListingForm";
 import { useTrustActionRedirect } from "@/hooks/useTrustActionRedirect";
+import { normalizeShippingScopeForForm } from "@/lib/listing-delivery";
 import { bookPath, makeBookSlug, parsePublicSlug } from "@/lib/slugs";
 import { trpc } from "@/providers/app-providers";
 
@@ -126,11 +127,17 @@ export default function EditListingPage() {
           pages: listing.pages ? String(listing.pages) : "",
           price: listing.price ?? "",
           imageUrl: listing.imageUrl ?? "",
+          imageUrls: listing.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
           shippingCost: listing.shippingCost ?? "0",
           currency: listing.currency,
           country: listing.country,
           city: listing.city,
+          locationId: listing.locationId ?? null,
+          educationLevel: listing.educationLevel ?? "",
+          schoolType: listing.schoolType ?? "",
           pickupAvailable: listing.pickupAvailable,
+          manualShippingEnabled: listing.manualShippingEnabled,
+          shippingScope: normalizeShippingScopeForForm(listing.shippingScope),
           transactionType: listing.transactionType,
         }}
         isPending={updateListing.isPending}

@@ -15,6 +15,41 @@
       "when": 1780407302626,
       "tag": "0001_daffy_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780934391300,
+      "tag": "0002_futuristic_sharon_ventura",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780938123789,
+      "tag": "0003_admin_user_bans",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1780945678901,
+      "tag": "0004_admin_team_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1780951234567,
+      "tag": "0005_book_category_taxonomy",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1781008768573,
+      "tag": "0006_skinny_kree",
+      "breakpoints": true
     }
   ]
 }

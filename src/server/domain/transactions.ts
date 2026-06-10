@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "@/server/db/connection";
 import { books, transactionEvents, transactions, users } from "@/server/db/schema";
@@ -39,14 +39,25 @@ export async function createTransaction(input: {
   message?: string;
 }) {
   const idempotencyKey = input.idempotencyKey ?? randomUUID();
-  const existing = await getDb()
-    .select()
-    .from(transactions)
-    .where(eq(transactions.idempotencyKey, idempotencyKey))
-    .limit(1);
-  if (existing[0]) return { id: existing[0].id };
 
   const created = await getDb().transaction(async (tx) => {
+    const existing = await tx
+      .select()
+      .from(transactions)
+      .where(eq(transactions.idempotencyKey, idempotencyKey))
+      .limit(1);
+    if (existing[0]) {
+      if (
+        existing[0].bookId === input.bookId &&
+        existing[0].requesterId === input.requesterId
+      ) {
+        return { id: existing[0].id };
+      }
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Idempotency key mismatch",
+      });
+    }
     const [book] = await tx
       .select()
       .from(books)
@@ -147,6 +158,25 @@ export async function updateTransactionStatus(input: {
   status: Exclude<TransactionStatus, "pending" | "expired">;
   message?: string;
 }) {
+  return updateTransactionStatusInternal(input);
+}
+
+export async function adminUpdateTransactionStatus(input: {
+  actorId: number;
+  transactionId: number;
+  status: Extract<TransactionStatus, "completed" | "cancelled">;
+  message?: string;
+}) {
+  return updateTransactionStatusInternal({ ...input, adminOverride: true });
+}
+
+async function updateTransactionStatusInternal(input: {
+  actorId: number;
+  transactionId: number;
+  status: Exclude<TransactionStatus, "pending" | "expired">;
+  message?: string;
+  adminOverride?: boolean;
+}) {
   const updated = await getDb().transaction(async (tx) => {
     const [transaction] = await tx
       .select()
@@ -156,14 +186,18 @@ export async function updateTransactionStatus(input: {
     if (!transaction) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Transaction not found" });
     }
-    if (transaction.ownerId !== input.actorId && transaction.requesterId !== input.actorId) {
+    if (
+      !input.adminOverride &&
+      transaction.ownerId !== input.actorId &&
+      transaction.requesterId !== input.actorId
+    ) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Not a participant" });
     }
     try {
       assertTransactionTransition({
         current: transaction.status,
         next: input.status,
-        isOwner: transaction.ownerId === input.actorId,
+        isOwner: input.adminOverride || transaction.ownerId === input.actorId,
       });
     } catch (error) {
       throw new TRPCError({
@@ -173,7 +207,10 @@ export async function updateTransactionStatus(input: {
     }
 
     if (input.status === "accepted") {
-      if (transaction.ownerId !== input.actorId || transaction.status !== "pending") {
+      if (
+        !input.adminOverride &&
+        (transaction.ownerId !== input.actorId || transaction.status !== "pending")
+      ) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be accepted by the owner" });
       }
       const [target] = await tx
@@ -190,15 +227,59 @@ export async function updateTransactionStatus(input: {
               eq(books.id, transaction.offeredBookId),
               eq(books.status, "active"),
             ),
-          );
+        );
         ensureAffected(offered, "Offered book is no longer available");
       }
+      const reservedBookIds = transaction.offeredBookId
+        ? [transaction.bookId, transaction.offeredBookId]
+        : [transaction.bookId];
+      const conflictingTransactions = await tx
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.status, "pending"),
+            ne(transactions.id, transaction.id),
+            or(
+              inArray(transactions.bookId, reservedBookIds),
+              inArray(transactions.offeredBookId, reservedBookIds),
+            ),
+          ),
+        );
+      await tx
+        .update(transactions)
+        .set({ status: "declined" })
+        .where(
+          and(
+            eq(transactions.status, "pending"),
+            ne(transactions.id, transaction.id),
+            or(
+              inArray(transactions.bookId, reservedBookIds),
+              inArray(transactions.offeredBookId, reservedBookIds),
+            ),
+          ),
+        );
+      if (conflictingTransactions.length) {
+        await tx.insert(transactionEvents).values(
+          conflictingTransactions.map((conflict) => ({
+            transactionId: conflict.id,
+            actorUserId: input.actorId,
+            type: "transaction.declined_conflict",
+          })),
+        );
+      }
     } else if (input.status === "declined") {
-      if (transaction.ownerId !== input.actorId || transaction.status !== "pending") {
+      if (
+        !input.adminOverride &&
+        (transaction.ownerId !== input.actorId || transaction.status !== "pending")
+      ) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be declined by the owner" });
       }
     } else if (input.status === "completed") {
-      if (transaction.ownerId !== input.actorId || transaction.status !== "accepted") {
+      if (
+        !input.adminOverride &&
+        (transaction.ownerId !== input.actorId || transaction.status !== "accepted")
+      ) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only the owner can complete an accepted transaction" });
       }
       await tx.update(books).set({ status: "completed" }).where(eq(books.id, transaction.bookId));

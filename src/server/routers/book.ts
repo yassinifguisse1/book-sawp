@@ -18,6 +18,7 @@ import { createRouter, publicQuery, authedQuery, activeUserAction } from "@/serv
 const condition = z.enum(["likenew", "verygood", "good", "fair", "poor"]);
 const transactionType = z.enum(["swap", "giveaway", "sale"]);
 const publicIdInput = z.object({ publicId: z.string().uuid() });
+const maxListingImages = 4;
 const listingImageUrl = z
   .string()
   .trim()
@@ -30,6 +31,17 @@ const listingImageUrl = z
       return value.startsWith("/");
     }
   }, "Use an image URL or site path");
+const uploadedListingImageUrl = listingImageUrl.refine((value) => {
+  try {
+    const url = new URL(value);
+    return (
+      url.hostname.endsWith(".blob.vercel-storage.com") &&
+      url.pathname.startsWith("/listing-covers/")
+    );
+  } catch {
+    return false;
+  }
+}, "Upload a book cover image before publishing");
 
 const listingFields = {
   title: z.string().trim().min(1).max(255),
@@ -47,8 +59,34 @@ const listingFields = {
   country: z.string().regex(/^[A-Z]{2}$/).default("US"),
   city: z.string().trim().min(1).max(120).default("Unknown"),
   pickupAvailable: z.boolean().optional(),
+  locationId: z.number().int().positive().optional(),
+  pickupEnabled: z.boolean().optional(),
+  pickupRadiusKm: z.number().int().min(1).max(500).optional(),
+  manualShippingEnabled: z.boolean().optional(),
+  shippingScope: z
+    .enum(["pickup_only", "domestic_only", "selected_countries", "worldwide"])
+    .optional(),
+  shippingDestinationCountryCodes: z
+    .array(z.string().regex(/^[A-Z]{2}$/))
+    .max(50)
+    .optional(),
+  educationLevel: z.string().trim().max(80).optional(),
+  schoolType: z.enum(["public_school", "private_school", "not_applicable"]).optional(),
   imageUrl: listingImageUrl.optional(),
-  imageUrls: z.array(listingImageUrl).max(6).optional(),
+  imageUrls: z.array(listingImageUrl).max(maxListingImages).optional(),
+};
+const createListingFields = {
+  ...listingFields,
+  imageUrl: uploadedListingImageUrl.optional(),
+  imageUrls: z
+    .array(uploadedListingImageUrl)
+    .min(1, "Upload a book cover image before publishing")
+    .max(maxListingImages),
+};
+const updateListingFields = {
+  ...listingFields,
+  imageUrl: uploadedListingImageUrl.optional(),
+  imageUrls: z.array(uploadedListingImageUrl).max(maxListingImages).optional(),
 };
 
 function flattenOwner<
@@ -164,14 +202,14 @@ export const bookRouter = createRouter({
   }),
 
   create: activeUserAction("listing.publish")
-    .input(z.object(listingFields))
+    .input(z.object(createListingFields))
     .mutation(async ({ ctx, input }) => {
       const listing = await createListing(ctx.user.id, input);
       return { id: listing?.id };
     }),
 
   update: activeUserAction("listing.edit")
-    .input(z.object({ id: z.number().int().positive(), ...listingFields }).partial().required({ id: true }))
+    .input(z.object({ id: z.number().int().positive(), ...updateListingFields }).partial().required({ id: true }))
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
       await updateListing(ctx.user.id, id, updates);

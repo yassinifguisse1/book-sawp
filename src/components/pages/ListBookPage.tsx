@@ -49,7 +49,10 @@ export default function ListBook() {
   }
 
   const handleSubmit = (values: ListingFormSubmitValues) => {
-    createBook.mutate(values);
+    createBook.mutate({
+      ...values,
+      imageUrls: values.imageUrls ?? (values.imageUrl ? [values.imageUrl] : []),
+    });
   };
 
   return (
