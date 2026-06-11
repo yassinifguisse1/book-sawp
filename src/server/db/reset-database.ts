@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import mysql from "mysql2/promise";
 
+import { mysqlSslOptions } from "@/server/db/mysql-ssl";
 import { clearListingSearchIndex } from "@/server/platform/search";
 
 config({ path: ".env.local", quiet: true });
@@ -36,10 +37,7 @@ function connectionOptions(database: string): mysql.ConnectionOptions {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database,
-    ssl:
-      process.env.DATABASE_SSL === "true" || process.env.DATABASE_SSL === "required"
-        ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false" }
-        : undefined,
+    ssl: mysqlSslOptions(databaseUrl),
   };
 }
 

@@ -2,6 +2,7 @@ import { drizzle as drizzleMysql } from "drizzle-orm/mysql2";
 import { drizzle as drizzlePlanetScale } from "drizzle-orm/planetscale-serverless";
 import mysql from "mysql2/promise";
 import { env } from "@/server/env";
+import { mysqlSslOptions } from "@/server/db/mysql-ssl";
 import * as schema from "./schema";
 import * as relations from "./relations";
 
@@ -32,9 +33,7 @@ function mysqlConnectionOptions(): mysql.PoolOptions {
     password: decodeURIComponent(url.password),
     database,
     connectionLimit: 10,
-    ssl: env.databaseSsl
-      ? { rejectUnauthorized: env.databaseSslRejectUnauthorized }
-      : undefined,
+    ssl: mysqlSslOptions(requireDatabaseUrl()),
   };
 }
 

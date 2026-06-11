@@ -1,3 +1,5 @@
+import { isMysqlSslEnabled } from "@/server/db/mysql-ssl";
+
 function value(name: string) {
   return process.env[name] ?? "";
 }
@@ -29,10 +31,20 @@ export const env = {
     return value("DATABASE_DRIVER") || "mysql2";
   },
   get databaseSsl() {
-    return enabled("DATABASE_SSL") || value("DATABASE_SSL") === "required";
+    return isMysqlSslEnabled(value("DATABASE_URL"));
   },
   get databaseSslRejectUnauthorized() {
-    return value("DATABASE_SSL_REJECT_UNAUTHORIZED") !== "false";
+    const rejectEnv = value("DATABASE_SSL_REJECT_UNAUTHORIZED");
+    if (rejectEnv === "true") return true;
+    if (rejectEnv === "false") return false;
+    try {
+      const sslMode = new URL(value("DATABASE_URL")).searchParams
+        .get("ssl-mode")
+        ?.toUpperCase();
+      return sslMode !== "REQUIRED";
+    } catch {
+      return true;
+    }
   },
   get ownerClerkUserId() {
     return value("OWNER_CLERK_USER_ID");

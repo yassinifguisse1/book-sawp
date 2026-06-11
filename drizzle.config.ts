@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
+import { mysqlSslOptions } from "./src/server/db/mysql-ssl";
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
@@ -21,12 +22,7 @@ function mysqlCredentials() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database,
-    ssl:
-      process.env.DATABASE_SSL === "true" || process.env.DATABASE_SSL === "required"
-        ? {
-            rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false",
-          }
-        : undefined,
+    ssl: mysqlSslOptions(process.env.DATABASE_URL!),
   };
 }
 

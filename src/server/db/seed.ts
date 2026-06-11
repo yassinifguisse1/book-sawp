@@ -4,7 +4,9 @@ import { closeDb, getDb } from "./connection";
 import { users, books, userProfileLocations } from "./schema";
 import { assignLegacyGenresToCategories, seedDefaultCategories } from "../domain/taxonomy";
 import { seedMarketConfigs } from "../domain/markets";
-import { seedSampleLocations } from "./seed-locations";
+import { sampleCities, seedSampleLocations } from "./seed-locations";
+
+const cityMetaByKey = new Map(sampleCities.map((city) => [city.key, city]));
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
@@ -858,6 +860,7 @@ async function seedProduction(
 
   for (let cityIndex = 0; cityIndex < cityKeys.length; cityIndex++) {
     const cityKey = cityKeys[cityIndex];
+    const cityMeta = cityMetaByKey.get(cityKey);
     const locationId = locationsByKey.get(cityKey);
     const cityBooks = booksByCity[cityIndex];
     if (!cityBooks.length) continue;
@@ -889,12 +892,8 @@ async function seedProduction(
         currency: "USD" as const,
         priceMinor: book.priceMinor,
         shippingMinor,
-        country: cityKey.split("-").pop()?.toUpperCase() ?? "US",
-        city: cityKey
-          .split("-")
-          .slice(0, -1)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" "),
+        country: cityMeta?.countryCode ?? "US",
+        city: cityMeta?.cityName ?? cityKey,
         locationId: locationId ?? null,
         pickupEnabled,
         pickupRadiusKm: pickupEnabled ? 25 : null,

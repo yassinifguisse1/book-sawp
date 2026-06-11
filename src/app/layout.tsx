@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 import { ServiceBanner } from "@/components/layout/ServiceBanner";
@@ -20,6 +21,7 @@ export default function RootLayout({
           <ServiceBanner />
           {children}
         </AppProviders>
+        <Analytics />
       </body>
     </html>
   );
