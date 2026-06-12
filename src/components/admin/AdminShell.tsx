@@ -14,6 +14,7 @@ import {
   ScrollText,
   ShieldCheck,
   UserCog,
+  FileText,
 } from "lucide-react";
 
 type AdminShellProps = {
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/admin/chat-safety", label: "Chat Safety", icon: MessageSquareWarning },
   { href: "/admin/taxonomy", label: "Taxonomy", icon: SlidersHorizontal },
   { href: "/admin/audit", label: "Audit Logs", icon: ScrollText },
+  { href: "/admin/blog", label: "Blog & SEO", icon: FileText },
 ];
 
 const superAdminNavItems = [

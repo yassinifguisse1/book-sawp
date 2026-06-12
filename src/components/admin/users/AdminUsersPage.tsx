@@ -451,6 +451,7 @@ export function AdminUsersPage() {
       </AdminPanel>
 
       <UserActionModal
+        key={modal?.kind ?? "closed"}
         modal={modal}
         onConfirm={handleModalConfirm}
         isSubmitting={moderateUsers.isPending}

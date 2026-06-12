@@ -706,3 +706,71 @@ export const featureFlags = mysqlTable(
     index("feature_flags_country_idx").on(table.country, table.key),
   ],
 );
+
+export const posts = mysqlTable(
+  "posts",
+  {
+    id: serial("id").primaryKey(),
+    publicId: publicId().unique(),
+    slug: varchar("slug", { length: 120 }).notNull().unique(),
+    title: varchar("title", { length: 255 }).notNull(),
+    excerpt: varchar("excerpt", { length: 500 }),
+    content: text("content").notNull(),
+    coverImageUrl: text("coverImageUrl"),
+    status: mysqlEnum("status", ["draft", "published", "archived"])
+      .default("draft")
+      .notNull(),
+    authorId: bigint("authorId", { mode: "number", unsigned: true }).notNull(),
+    publishedAt: timestamp("publishedAt"),
+    seoTitle: varchar("seoTitle", { length: 160 }),
+    seoDescription: varchar("seoDescription", { length: 320 }),
+    readingTimeMinutes: int("readingTimeMinutes", { unsigned: true }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp("deletedAt"),
+  },
+  (table) => [
+    index("posts_status_published_idx").on(table.status, table.publishedAt),
+    index("posts_author_idx").on(table.authorId, table.status),
+  ],
+);
+
+export type Post = typeof posts.$inferSelect;
+export type InsertPost = typeof posts.$inferInsert;
+
+export const postCategories = mysqlTable(
+  "post_categories",
+  {
+    id: serial("id").primaryKey(),
+    publicId: publicId().unique(),
+    slug: varchar("slug", { length: 120 }).notNull().unique(),
+    name: varchar("name", { length: 120 }).notNull(),
+    seoTitle: varchar("seoTitle", { length: 160 }),
+    seoDescription: varchar("seoDescription", { length: 320 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  () => [],
+);
+
+export type PostCategory = typeof postCategories.$inferSelect;
+export type InsertPostCategory = typeof postCategories.$inferInsert;
+
+export const postCategoryAssignments = mysqlTable(
+  "post_category_assignments",
+  {
+    id: serial("id").primaryKey(),
+    postId: bigint("postId", { mode: "number", unsigned: true }).notNull(),
+    categoryId: bigint("categoryId", { mode: "number", unsigned: true }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("post_category_assign_unique").on(table.postId, table.categoryId),
+    index("post_category_assign_category_idx").on(table.categoryId),
+  ],
+);
+
+export type PostCategoryAssignment = typeof postCategoryAssignments.$inferSelect;
+export type InsertPostCategoryAssignment = typeof postCategoryAssignments.$inferInsert;

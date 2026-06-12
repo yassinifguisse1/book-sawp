@@ -81,10 +81,6 @@ export function BrowseLocationSelector() {
   }, [isAuthenticated, isStored, utils]);
 
   useEffect(() => {
-    if (open) setDraft(context);
-  }, [open, context]);
-
-  useEffect(() => {
     const timeout = window.setTimeout(() => setDebouncedQuery(cityQuery.trim()), 300);
     return () => window.clearTimeout(timeout);
   }, [cityQuery]);
@@ -128,7 +124,10 @@ export function BrowseLocationSelector() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setDraft(context);
+          setOpen(true);
+        }}
         className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-[#111] transition-colors hover:bg-[#F7F7F7] hover:text-[#007782]"
         aria-label="Change browsing location"
       >

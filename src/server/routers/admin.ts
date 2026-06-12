@@ -14,6 +14,7 @@ import {
   roleLabel,
 } from "@/server/domain/admin-team";
 import { listAdminLocations, setLocationActive } from "@/server/domain/admin-locations";
+import { getPostByPublicId, listAllPosts } from "@/server/domain/posts";
 import {
   accountStatusForUser,
   canModerateUser,
@@ -41,7 +42,7 @@ import {
 } from "@/server/domain/taxonomy";
 import { adminUpdateTransactionStatus } from "@/server/domain/transactions";
 import { env } from "@/server/env";
-import { createRouter, adminQuery, superAdminQuery } from "@/server/trpc";
+import { createRouter, adminQuery, staffQuery, superAdminQuery } from "@/server/trpc";
 
 async function countRows(query: Promise<Array<{ value: number }>>) {
   const [row] = await query;
@@ -1764,5 +1765,21 @@ export const adminRouter = createRouter({
     setActive: adminQuery
       .input(setLocationActiveInput)
       .mutation(({ ctx, input }) => setLocationActive({ actorUserId: ctx.user.id, ...input })),
+  }),
+
+  blog: createRouter({
+    list: staffQuery
+      .input(
+        z.object({
+          status: z.enum(["all", "draft", "published", "archived"]).default("all"),
+          query: z.string().trim().default(""),
+          limit: z.number().int().min(1).max(100).default(25),
+          offset: z.number().int().min(0).default(0),
+        })
+      )
+      .query(({ input }) => listAllPosts(input)),
+    byPublicId: staffQuery
+      .input(z.object({ publicId: z.string().uuid() }))
+      .query(({ input }) => getPostByPublicId(input.publicId)),
   }),
 });

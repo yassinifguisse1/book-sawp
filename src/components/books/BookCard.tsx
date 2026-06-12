@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, RefreshCw, Gift, DollarSign, MapPin, Truck } from "lucide-react";
+import { Heart, RefreshCw, Gift, DollarSign, MapPin } from "lucide-react";
 import { bookPath } from "@/lib/slugs";
 import { useState } from "react";
 
@@ -54,22 +54,22 @@ export function BookCard({
     switch (book.transactionType) {
       case "swap":
         return (
-          <span className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-[#007782] text-white text-xs font-medium rounded">
-            <RefreshCw className="w-3 h-3" />
+          <span className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-[#007782] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+            <RefreshCw className="h-3 w-3" />
             Swap
           </span>
         );
       case "giveaway":
         return (
-          <span className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-[#2E7D32] text-white text-xs font-medium rounded">
-            <Gift className="w-3 h-3" />
+          <span className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-[#2E7D32] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+            <Gift className="h-3 w-3" />
             Free
           </span>
         );
       case "sale":
         return (
-          <span className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-[#E65100] text-white text-xs font-medium rounded">
-            <DollarSign className="w-3 h-3" />
+          <span className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-[#F5A623] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+            <DollarSign className="h-3 w-3" />
             {book.currency} {book.price}
           </span>
         );
@@ -81,11 +81,15 @@ export function BookCard({
   const getPriceDisplay = () => {
     switch (book.transactionType) {
       case "swap":
-        return <span className="text-sm font-semibold text-[#007782]">Swap</span>;
+        return <span className="text-sm font-bold text-[#007782]">Swap</span>;
       case "giveaway":
-        return <span className="text-sm font-semibold text-[#2E7D32]">Free</span>;
+        return <span className="text-sm font-bold text-[#2E7D32]">Free</span>;
       case "sale":
-        return <span className="text-sm font-semibold text-[#111]">{book.currency} {book.price}</span>;
+        return (
+          <span className="text-sm font-bold text-[#2C2C2C]">
+            {book.currency} {book.price}
+          </span>
+        );
       default:
         return null;
     }
@@ -93,38 +97,39 @@ export function BookCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.35, delay: index * 0.04 }}
+      className="h-full"
     >
-      <Link href={bookPath(book)} className="group block">
-        <div className="bg-white rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
+      <Link href={bookPath(book)} className="group flex h-full flex-col">
+        <div className="flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
           {/* Image */}
-          <div className="relative aspect-[3/4] overflow-hidden bg-[#F7F7F7]">
+          <div className="relative aspect-[3/4] shrink-0 overflow-hidden bg-[#F5F0E8]">
             {!imageError && book.imageUrl ? (
               <img
                 src={book.imageUrl}
                 alt={book.title}
-                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                 onError={() => setImageError(true)}
+                loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#e6f3f4] to-[#F7F7F7]">
-                <span className="text-4xl font-bold text-[#007782]/20">{book.title.charAt(0)}</span>
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E6F3F4] to-[#F5F0E8]">
+                <span className="text-5xl font-bold text-[#007782]/15">
+                  {book.title.charAt(0)}
+                </span>
               </div>
             )}
 
-            {/* Transaction Badge */}
             {getTransactionBadge()}
 
-            {/* Demo Badge */}
             {book.isDemo ? (
-              <span className="absolute top-2 right-10 flex items-center gap-1 rounded bg-[#666] px-1.5 py-0.5 text-[10px] font-medium text-white">
+              <span className="absolute top-2.5 right-10 rounded-full bg-[#666]/80 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
                 Example
               </span>
             ) : null}
 
-            {/* Favorite Button */}
             {onToggleFavorite ? (
               <button
                 type="button"
@@ -134,12 +139,14 @@ export function BookCard({
                   e.stopPropagation();
                   onToggleFavorite(book.id);
                 }}
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-white disabled:opacity-60"
+                className="absolute top-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-white disabled:opacity-60"
               >
                 <motion.div whileTap={{ scale: 1.3 }} transition={{ duration: 0.15 }}>
                   <Heart
-                    className={`w-4 h-4 transition-colors ${
-                      isFavorited ? "fill-[#D32F2F] text-[#D32F2F]" : "text-[#666] hover:text-[#D32F2F]"
+                    className={`h-4 w-4 transition-colors ${
+                      isFavorited
+                        ? "fill-[#D32F2F] text-[#D32F2F]"
+                        : "text-[#666] hover:text-[#D32F2F]"
                     }`}
                   />
                 </motion.div>
@@ -148,47 +155,34 @@ export function BookCard({
           </div>
 
           {/* Content */}
-          <div className="p-3">
-            <h3 className="text-sm font-semibold text-[#111] line-clamp-2 leading-tight mb-0.5">
+          <div className="flex flex-1 flex-col p-3">
+            <h3 className="mb-0.5 text-sm font-semibold leading-snug text-[#2C2C2C] line-clamp-2">
               {book.title}
             </h3>
-            <p className="text-xs text-[#666] mb-1.5">{book.author}</p>
+            <p className="mb-2 text-xs text-[#666]">{book.author}</p>
 
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="inline-block px-1.5 py-0.5 bg-[#F7F7F7] text-[#666] text-[11px] rounded">
+            <div className="mb-auto">
+              <span className="inline-block rounded-md bg-[#F5F0E8] px-1.5 py-0.5 text-[11px] font-medium text-[#595959]">
                 {conditionLabels[book.condition] || book.condition}
               </span>
             </div>
 
-            {(book.displayLocation || book.distanceLabel || book.pickupAvailable || book.shipsToYou) && (
-              <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[#666]">
-                {book.displayLocation ? (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-[#999]" />
-                    {book.displayLocation}
-                  </span>
-                ) : null}
-                {book.distanceLabel ? (
-                  <span className="text-[#999]">· {book.distanceLabel} away</span>
-                ) : null}
-                <span className="flex w-full items-center gap-1.5">
-                  {book.pickupAvailable ? (
-                    <span className="inline-flex items-center gap-0.5 rounded bg-[#E6F3F4] px-1.5 py-0.5 text-[10px] font-medium text-[#007782]">
-                      <MapPin className="h-2.5 w-2.5" /> Pickup
-                    </span>
-                  ) : null}
-                  {book.shipsToYou ? (
-                    <span className="inline-flex items-center gap-0.5 rounded bg-[#EAF5EC] px-1.5 py-0.5 text-[10px] font-medium text-[#2E7D32]">
-                      <Truck className="h-2.5 w-2.5" /> Ships to you
-                    </span>
-                  ) : null}
-                </span>
-              </div>
-            )}
+            <div className="mt-2 flex items-center gap-1 text-[11px] text-[#999]">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">
+                {book.displayLocation ?? "Unknown location"}
+                {book.distanceLabel ? ` · ${book.distanceLabel}` : ""}
+              </span>
+            </div>
 
-            <div className="flex items-center justify-between">
+            <div className="mt-1.5 flex items-center justify-between">
               {getPriceDisplay()}
-              <span className="text-[11px] text-[#999]">{book.genre}</span>
+              <span className="text-[11px] text-[#999]">
+                {new Date(book.createdAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
             </div>
           </div>
         </div>

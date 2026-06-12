@@ -11,6 +11,9 @@ import {
   locationAliases,
   messages,
   notifications,
+  postCategories,
+  postCategoryAssignments,
+  posts,
   reviews,
   transactions,
   transactionEvents,
@@ -24,6 +27,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   favorites: many(favorites),
   notifications: many(notifications),
   adminInvitations: many(adminInvitations),
+  posts: many(posts),
 }));
 
 export const adminInvitationsRelations = relations(adminInvitations, ({ one }) => ({
@@ -166,5 +170,22 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
     references: [users.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, { fields: [posts.authorId], references: [users.id] }),
+  categoryAssignments: many(postCategoryAssignments),
+}));
+
+export const postCategoriesRelations = relations(postCategories, ({ many }) => ({
+  assignments: many(postCategoryAssignments),
+}));
+
+export const postCategoryAssignmentsRelations = relations(postCategoryAssignments, ({ one }) => ({
+  post: one(posts, { fields: [postCategoryAssignments.postId], references: [posts.id] }),
+  category: one(postCategories, {
+    fields: [postCategoryAssignments.categoryId],
+    references: [postCategories.id],
   }),
 }));

@@ -238,6 +238,7 @@ export function AdminUserDetailPage({ userId }: { userId: number }) {
       </AdminPanel>
 
       <UserActionModal
+        key={modal?.kind ?? "closed"}
         modal={modal}
         revealedPhone={revealedPhone}
         onRevealPhone={(reason) => revealUserPhone.mutate({ userId: user.id, reason })}

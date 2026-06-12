@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TrpcContext } from "./context";
+import type { TrpcContext } from "@/server/context";
 
 type InsertCall = { table: unknown; value: Record<string, unknown> };
 type UpdateCall = { table: unknown; value: Record<string, unknown> };
@@ -102,7 +102,7 @@ vi.mock("@/server/domain/outbox", () => ({
   }),
 }));
 
-import { appRouter } from "./router";
+import { appRouter } from "@/server/router";
 
 const context = {
   auth: { userId: "staff_clerk_id" },

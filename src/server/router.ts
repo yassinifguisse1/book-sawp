@@ -12,6 +12,7 @@ import { adminRouter } from "./routers/admin";
 import { taxonomyRouter } from "./routers/taxonomy";
 import { discoveryRouter } from "./routers/discovery";
 import { locationRouter } from "./routers/location";
+import { postRouter } from "./routers/post";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
@@ -27,6 +28,7 @@ export const appRouter = createRouter({
   taxonomy: taxonomyRouter,
   discovery: discoveryRouter,
   location: locationRouter,
+  post: postRouter,
   admin: adminRouter,
 });
 

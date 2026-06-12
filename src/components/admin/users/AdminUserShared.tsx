@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Eye, ShieldAlert, X } from "lucide-react";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import type { AccountStatus, AdminUser, RiskStatus } from "./types";
 
 export type ModalKind =
@@ -204,12 +204,6 @@ export function UserActionModal({
   onClose: () => void;
 }) {
   const [revealReason, setRevealReason] = useState("");
-
-  useEffect(() => {
-    if (modal?.kind === "reveal_phone") {
-      setRevealReason("");
-    }
-  }, [modal?.kind, modal?.user?.id]);
 
   if (!modal) return null;
 

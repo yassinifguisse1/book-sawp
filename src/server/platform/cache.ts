@@ -22,7 +22,13 @@ function namespacedKey(key: string) {
 export async function readCache<T>(key: string) {
   try {
     const value = await getRedis()?.get<T | string>(namespacedKey(key));
-    return typeof value === "string" ? superjson.parse<T>(value) : value ?? null;
+    if (value === null || value === undefined) return null;
+    if (typeof value === "string") return superjson.parse<T>(value);
+    // Upstash may auto-parse the stored JSON string into the superjson wrapper object.
+    if (typeof value === "object" && "json" in value) {
+      return superjson.parse<T>(JSON.stringify(value));
+    }
+    return value as T;
   } catch {
     return null;
   }

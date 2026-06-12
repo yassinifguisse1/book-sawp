@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /messages/
+Disallow: /swap/
+Disallow: /list/
+Disallow: /notifications/
+Disallow: /sign-in/
+Disallow: /sign-up/
+
+Sitemap: https://bookswap.app/sitemap.xml

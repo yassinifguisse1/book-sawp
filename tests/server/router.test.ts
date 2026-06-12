@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TrpcContext } from "./context";
-import { appRouter } from "./router";
+import type { TrpcContext } from "@/server/context";
+import { appRouter } from "@/server/router";
 
 const anonymousContext = {
   auth: {

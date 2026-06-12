@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { eq } from "drizzle-orm";
 import { closeDb, getDb } from "./connection";
-import { users, books, userProfileLocations } from "./schema";
+import { users, books, userProfileLocations, postCategories, posts, postCategoryAssignments } from "./schema";
 import { assignLegacyGenresToCategories, seedDefaultCategories } from "../domain/taxonomy";
 import { seedMarketConfigs } from "../domain/markets";
 import { sampleCities, seedSampleLocations } from "./seed-locations";
@@ -803,6 +803,7 @@ async function seed() {
   }
 
   await assignLegacyGenresToCategories();
+  await seedBlogContent(db);
   console.log("Seeding complete!");
 }
 
@@ -1021,6 +1022,206 @@ async function seedDevelopment(
   }
 
   console.log(`Dev books: ${booksCreated} created, ${booksUpdated} updated.`);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Blog seed data                                                             */
+/* -------------------------------------------------------------------------- */
+
+const defaultBlogCategories = [
+  {
+    slug: "reading-tips",
+    name: "Reading Tips",
+    seoTitle: "Reading Tips | BookSwap Blog",
+    seoDescription: "Practical tips to read more, organize your bookshelf, and discover your next favorite book.",
+  },
+  {
+    slug: "book-reviews",
+    name: "Book Reviews",
+    seoTitle: "Book Reviews | BookSwap Blog",
+    seoDescription: "Honest reviews of fiction, non-fiction, and hidden gems from the BookSwap community.",
+  },
+  {
+    slug: "community",
+    name: "Community Stories",
+    seoTitle: "Community Stories | BookSwap Blog",
+    seoDescription: "Meet the readers, swappers, and collectors who make BookSwap a thriving community.",
+  },
+  {
+    slug: "sustainability",
+    name: "Sustainability",
+    seoTitle: "Sustainability | BookSwap Blog",
+    seoDescription: "How secondhand books help the planet and simple ways to read more sustainably.",
+  },
+];
+
+const defaultBlogPosts = [
+  {
+    slug: "how-to-swap-books-safely",
+    title: "How to Swap Books Safely: A Complete Guide",
+    excerpt:
+      "Everything you need to know about swapping books with confidence, from inspecting condition to arranging pickup or shipping.",
+    content: `
+      <p>Swapping books is one of the most rewarding ways to refresh your reading list without spending a penny. But like any peer-to-peer exchange, a little preparation goes a long way.</p>
+      <h2>Inspect the book carefully</h2>
+      <p>Before confirming a swap, ask for photos of the cover, spine, and any dog-eared pages. Be honest about condition when listing your own books.</p>
+      <h2>Choose a safe exchange location</h2>
+      <p>Public places like cafés, libraries, or university campuses are ideal for in-person swaps. If you're shipping, use tracked delivery and agree on costs upfront.</p>
+      <h2>Communicate clearly</h2>
+      <p>Use BookSwap messaging to confirm titles, conditions, and logistics. Clear communication prevents misunderstandings and builds trust.</p>
+    `,
+    coverImageUrl: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=1200&q=80",
+    categorySlugs: ["reading-tips", "community"],
+    seoTitle: "How to Swap Books Safely | BookSwap",
+    seoDescription:
+      "Learn how to swap books safely with our complete guide to condition checks, meeting locations, and shipping best practices.",
+  },
+  {
+    slug: "top-summer-reads-2026",
+    title: "Top 10 Summer Reads for 2026",
+    excerpt:
+      "From beach-page-turners to thought-provoking non-fiction, these are the books BookSwap readers can't stop talking about this summer.",
+    content: `
+      <p>Summer is the perfect season to lose yourself in a great book. Whether you're planning a beach holiday or a quiet weekend in the garden, here are ten reads worth swapping for.</p>
+      <h2>Fiction picks</h2>
+      <p>Look for literary escapes in contemporary fiction, gripping mysteries, and uplifting romances. Our community favorites this year include novels from both debut authors and beloved bestsellers.</p>
+      <h2>Non-fiction discoveries</h2>
+      <p>From memoirs to science writing, non-fiction offers a different kind of escape. Try a biography, a nature book, or a practical guide you've been meaning to read.</p>
+      <h2>Share your own recommendations</h2>
+      <p>The best reading lists are collaborative. List the books you loved and see what others suggest in return.</p>
+    `,
+    coverImageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+    categorySlugs: ["book-reviews"],
+    seoTitle: "Top 10 Summer Reads for 2026 | BookSwap",
+    seoDescription:
+      "Discover the best summer books of 2026 according to the BookSwap community. Fiction, non-fiction, and hidden gems to swap today.",
+  },
+  {
+    slug: "sustainability-of-secondhand-books",
+    title: "The Sustainability of Secondhand Books",
+    excerpt:
+      "Every swapped book is a small win for the planet. Here's why secondhand reading matters and how you can build a greener bookshelf.",
+    content: `
+      <p>The book industry uses paper, ink, energy, and transportation. By choosing secondhand, swapping, or giving away books, readers can significantly reduce their environmental footprint.</p>
+      <h2>Save resources</h2>
+      <p>A secondhand book needs no new materials. It extends the life of something already made and keeps usable books out of landfills.</p>
+      <h2>Build a circular reading habit</h2>
+      <p>Instead of buying new, swap books you've finished for ones you haven't read. It's a simple loop that saves money and resources.</p>
+      <h2>Pass on the stories</h2>
+      <p>Every book has many readers inside it. Sharing stories is one of the most sustainable joys there is.</p>
+    `,
+    coverImageUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=1200&q=80",
+    categorySlugs: ["sustainability", "community"],
+    seoTitle: "The Sustainability of Secondhand Books | BookSwap",
+    seoDescription:
+      "Discover how swapping and buying secondhand books reduces your environmental impact and builds a more sustainable reading habit.",
+  },
+  {
+    slug: "how-to-build-a-reading-habit",
+    title: "How to Build a Reading Habit That Sticks",
+    excerpt:
+      "Practical, no-pressure strategies to read more books this year, even with a busy schedule.",
+    content: `
+      <p>Building a reading habit isn't about reading faster or finishing more books. It's about making reading a natural, enjoyable part of your day.</p>
+      <h2>Start small</h2>
+      <p>Ten pages a day is over 3,600 pages a year. Consistency beats intensity.</p>
+      <h2>Always have a book nearby</h2>
+      <p>Keep a book in your bag, on your phone, or by your bedside. When you have a spare moment, reach for it instead of a screen.</p>
+      <h2>Read what you love</h2>
+      <p>Life is too short for books that feel like homework. If you're not enjoying something, it's okay to put it down and try something else.</p>
+      <h2>Swap to keep it fresh</h2>
+      <p>A steady stream of new-to-you books keeps your shelf exciting without the cost of constantly buying new.</p>
+    `,
+    coverImageUrl: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80",
+    categorySlugs: ["reading-tips"],
+    seoTitle: "How to Build a Reading Habit That Sticks | BookSwap",
+    seoDescription:
+      "Simple, practical strategies to read more books this year. Build a sustainable reading habit with BookSwap.",
+  },
+];
+
+async function seedBlogContent(db: ReturnType<typeof getDb>) {
+  // 1. Seed categories
+  const categoryIdBySlug = new Map<string, number>();
+  for (const category of defaultBlogCategories) {
+    const [existing] = await db
+      .select({ id: postCategories.id })
+      .from(postCategories)
+      .where(eq(postCategories.slug, category.slug))
+      .limit(1);
+
+    if (existing) {
+      await db.update(postCategories).set(category).where(eq(postCategories.id, existing.id));
+      categoryIdBySlug.set(category.slug, existing.id);
+    } else {
+      const [result] = await db.insert(postCategories).values(category);
+      categoryIdBySlug.set(category.slug, Number(result.insertId));
+    }
+  }
+  console.log(`Seeded ${categoryIdBySlug.size} blog categories.`);
+
+  // 2. Find or create a team author for blog posts
+  const [teamAuthor] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkUserId, isProductionMode ? PRODUCTION_CLERK_ID! : "seed_user_1"))
+    .limit(1);
+
+  const authorId = teamAuthor?.id;
+  if (!authorId) {
+    console.log("Skipping blog seed: no team author found.");
+    return;
+  }
+
+  // 3. Seed posts
+  let postsCreated = 0;
+  let postsUpdated = 0;
+
+  for (const post of defaultBlogPosts) {
+    const categoryIds = post.categorySlugs
+      .map((slug) => categoryIdBySlug.get(slug))
+      .filter((id): id is number => id !== undefined);
+
+    const [existing] = await db
+      .select({ id: posts.id })
+      .from(posts)
+      .where(eq(posts.slug, post.slug))
+      .limit(1);
+
+    const baseValues = {
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content.trim(),
+      coverImageUrl: post.coverImageUrl,
+      status: "published" as const,
+      authorId,
+      publishedAt: new Date(),
+      seoTitle: post.seoTitle,
+      seoDescription: post.seoDescription,
+    };
+
+    let postId: number;
+    if (existing) {
+      await db.update(posts).set(baseValues).where(eq(posts.id, existing.id));
+      postId = existing.id;
+      postsUpdated += 1;
+    } else {
+      const [result] = await db.insert(posts).values(baseValues);
+      postId = Number(result.insertId);
+      postsCreated += 1;
+    }
+
+    // Sync category assignments
+    await db.delete(postCategoryAssignments).where(eq(postCategoryAssignments.postId, postId));
+    if (categoryIds.length) {
+      await db
+        .insert(postCategoryAssignments)
+        .values(categoryIds.map((categoryId) => ({ postId, categoryId })));
+    }
+  }
+
+  console.log(`Blog posts: ${postsCreated} created, ${postsUpdated} updated.`);
 }
 
 seed()
